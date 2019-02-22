@@ -1,0 +1,118 @@
+Docker steps : 
+
+
+1. docker build -t <imageName> 
+
+2. docker run image name .
+
+3. docker tag firstjavahello dockzerak/myimages
+
+4. docker push dockzerak/myimages
+
+5. List images  : docker image ls dockzerak/myimages
+
+6. docker run dockzerak/myimages:latest
+
+
+
+-------------------------------------------------------------
+Database SQL with Docker : 
+-------------------------------------------------------------
+
+
+
+Ref : https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker
+
+1. docker pull microsoft/mssql-server-linux:2017-latest
+
+2. docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Rakesh123$" --name "Planon" -p 1401:1433   -v sql1data:/var/opt/mssql -d microsoft/mssql-server-linux:2017-latest
+
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Rakesh123$" --name "Planon" -p 1401:1433   -v sql1data:/var/opt/mssql -d microsoft/mssql-server-linux:2017-latest
+
+3. docker exec -it Planon mkdir /var/opt/mssql/backup
+
+4. docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh123$" -Q "ALTER LOGIN SA WITH PASSWORD='Rakesh321$'"  --- Password change
+
+5. docker exec -it Planon "bash"
+
+6. /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'Rakesh123$'
+
+can also be connected with ------  sqlcmd -S 172.19.209.1,1401 -U SA -P "Rakesh321$"
+
+7. Table : PlanonEmployees
+
+INSERT INTO PlanonEmployees VALUES (1, 'Anand', 27);INSERT INTO PlanonEmployees VALUES (2, 'Mohammad', 16);
+INSERT INTO PlanonEmployees VALUES (3, 'Poornima', 8);INSERT INTO PlanonEmployees VALUES (4, 'Rakesh', 28);
+
+
+
+SELECT * FROM PlanonEmployees WHERE age > 8;
+
+8 . quit and exit
+
+--------------------------------------
+Create LOGIN 
+--------------------------------------
+1. CREATE LOGIN rakesh WITH PASSWORD ='Rakesh123#'
+GO
+2. ALTER LOGIN rakesh WITH default_database = PlanonDB
+GO
+3. CREATE USER rakesh FROM LOGIN rakesh
+GO
+4.  exec sp_addrolemember 'db_owner','rakesh'
+GO
+
+
+--------------------------------------
+Loading Backup file 
+
+--------------------------------------
+1. docker cp D:\Database\HeadAccelerator\UpgradedBackup.bak Planon:/var/opt/mssql/backup3
+
+2. docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh321$" -Q "RESTORE FILELISTONLY FROM DISK = '/var/opt/mssql/backup3/UpgradedBackup.bak'"
+
+3. docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh321$" -Q "RESTORE DATABASE PlanonDB FROM DISK = '/var/opt/mssql/backup3/UpgradedBackup.bak' WITH MOVE 'PLANON_DAT' TO '/var/opt/mssql/data/DEVENV_608081_Import.mdf', MOVE 'PLANON_Log' TO '/var/opt/mssql/data/DEVENV_608081_Import_LOG.ldf'"
+
+4. docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh321$" -Q "SELECT Name FROM sys.Databases"
+
+5. docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh321$" -Q "SELECT * FROM PlanonDB.dbo.RMT"
+
+--------------------------------------
+connect to the db VIA sql studio :
+-------------------------------------
+
+1. Do ip config on windows 
+
+	Ethernet adapter vEthernet (Default Switch):
+	 IPv4 Address. . . . . . . . . . . : 172.19.209.1      
+	 
+	 add port number to the ip config , this will give you server name : 172.19.209.1,1401
+	 
+	 server name : 172.19.209.1,1401
+	 Authentication : SQL Server Authentication
+	 Login : SA 
+	 Pwd : Rakesh321$
+	 
+	 Note : We need to create one more user and test 
+	 
+------------------------------------------------
+Backup creation 
+------------------------------------------------
+1.docker exec -it Planon /opt/mssql-tools/bin/sqlcmd  -S localhost -U SA -P "Rakesh321$" -Q "UPDATE PlanonDB.dbo.RMT SET NAAM='Docker' WHERE CODE = '4.24' "
+
+2.docker exec -it Planon /opt/mssql-tools/bin/sqlcmd  -S localhost -U SA -P "Rakesh321$" -Q "SELECT NAAM FROM PlanonDB.dbo.RMT WHERE CODE ='4.24' "
+
+3.docker exec -it Planon /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Rakesh321$" -Q "BACKUP DATABASE [PlanonDB] TO DISK = N'/var/opt/mssql/backup3/Planon_2.bak' WITH NOFORMAT, NOINIT, NAME = 'PlanonDB-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+
+4.docker cp Planon:/var/opt/mssql/backup3/Planon_2.bak Planon_2.bak 
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
